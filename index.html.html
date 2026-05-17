@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HRP — High Resolution Photography</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ========== CSS VARIABLES ========== */
+:root {
+  --black: #080808;
+  --deep: #0d0d0d;
+  --surface: #141414;
+  --card: #1a1a1a;
+  --border: #2a2a2a;
+  --muted: #888;
+  --text: #d4d4d4;
+  --white: #f0ede8;
+  --gold: #c9a84c;
+  --gold-light: #e8c96e;
+  --gold-dim: rgba(201,168,76,0.15);
+  --red: #c0392b;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ========== CUSTOM CURSOR ========== */
+.cursor {
+  width: 10px; height: 10px;
+  background: var(--gold);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: transform 0.1s, width 0.3s, height 0.3s, background 0.3s;
+}
+.cursor-ring {
+  width: 36px; height: 36px;
+  border: 1px solid rgba(201,168,76,0.5);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9998;
+  transform: translate(-50%,-50%);
+  transition: transform 0.15s ease-out, width 0.3s, height 0.3s, opacity 0.3s;
+}
+body:hover .cursor-ring { opacity: 1; }
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+/* ========== NOISE OVERLAY ========== */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9990; opacity: 0.4;
+}
+
+/* ========== NAVIGATION ========== */
+nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 60px;
+  background: linear-gradient(180deg, rgba(8,8,8,0.98) 0%, transparent 100%);
+  transition: background 0.4s, padding 0.4s;
+}
+nav.scrolled {
+  background: rgba(8,8,8,0.97);
+  padding: 14px 60px;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+}
+
+/* ===== LOGO ===== */
+.logo {
+  display: flex; align-items: center; gap: 14px;
+  text-decoration: none;
+}
+.logo-mark {
+  width: 46px; height: 46px;
+  position: relative;
+  flex-shrink: 0;
+}
+.logo-mark svg { width: 100%; height: 100%; }
+.logo-text { display: flex; flex-direction: column; line-height: 1; }
+.logo-name {
+  font-family: var(--font-display);
+  font-size: 28px;
+  letter-spacing: 6px;
+  color: var(--white);
+}
+.logo-tagline {
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.nav-links {
+  display: flex; gap: 36px; list-style: none; align-items: center;
+}
+.nav-links a {
+  font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--muted); text-decoration: none;
+  transition: color 0.3s;
+  position: relative;
+}
+.nav-links a::after {
+  content: '';
+  position: absolute; bottom: -4px; left: 0; right: 0;
+  height: 1px; background: var(--gold);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.3s;
+}
+.nav-links a:hover { color: var(--white); }
+.nav-links a:hover::after { transform: scaleX(1); }
+
+.nav-cta {
+  background: var(--gold); color: var(--black) !important;
+  padding: 10px 24px; font-size: 10px !important;
+  letter-spacing: 2px !important; font-weight: 500;
+  transition: background 0.3s, transform 0.2s !important;
+}
+.nav-cta::after { display: none !important; }
+.nav-cta:hover { background: var(--gold-light) !important; transform: translateY(-1px); }
+
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+.hamburger span { display: block; width: 26px; height: 1.5px; background: var(--white); transition: 0.3s; }
+
+/* ========== HERO ========== */
+.hero {
+  min-height: 100vh;
+  display: flex; align-items: center;
+  position: relative;
+  overflow: hidden;
+  padding: 0 60px;
+}
+
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 50%, rgba(201,168,76,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 50%),
+    var(--black);
+}
+
+.hero-grid-lines {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(ellipse 70% 70% at 60% 50%, black 0%, transparent 70%);
+}
+
+.hero-content {
+  position: relative; z-index: 2;
+  max-width: 760px;
+}
+
+.hero-eyebrow {
+  font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 24px;
+  display: flex; align-items: center; gap: 14px;
+  opacity: 0; animation: fadeUp 0.8s 0.2s forwards;
+}
+.hero-eyebrow::before {
+  content: ''; display: block;
+  width: 40px; height: 1px; background: var(--gold);
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(72px, 10vw, 140px);
+  line-height: 0.92;
+  color: var(--white);
+  letter-spacing: 2px;
+  opacity: 0; animation: fadeUp 0.9s 0.4s forwards;
+}
+.hero h1 em {
+  font-style: italic;
+  font-family: var(--font-serif);
+  color: var(--gold);
+  font-size: 0.75em;
+}
+
+.hero-sub {
+  font-family: var(--font-serif);
+  font-size: 20px; font-weight: 300; font-style: italic;
+  color: var(--muted); margin-top: 24px; max-width: 520px;
+  opacity: 0; animation: fadeUp 0.9s 0.6s forwards;
+}
+
+.hero-actions {
+  display: flex; gap: 20px; margin-top: 48px; align-items: center;
+  opacity: 0; animation: fadeUp 0.9s 0.8s forwards;
+}
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--gold); color: var(--black);
+  padding: 16px 38px; font-size: 11px; letter-spacing: 2.5px;
+  text-transform: uppercase; font-weight: 500; text-decoration: none;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.btn-primary::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--gold-light); transform: scaleX(0); transform-origin: left;
+  transition: transform 0.4s;
+}
+.btn-primary:hover::before { transform: scaleX(1); }
+.btn-primary span { position: relative; z-index: 1; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(201,168,76,0.2); }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 1px solid var(--border); color: var(--text);
+  padding: 15px 36px; font-size: 11px; letter-spacing: 2.5px;
+  text-transform: uppercase; text-decoration: none;
+  transition: all 0.3s;
+}
+.btn-ghost:hover { border-color: var(--gold); color: var(--gold); transform: translateY(-2px); }
+
+.hero-stats {
+  position: absolute; right: 60px; bottom: 80px;
+  display: flex; gap: 50px;
+  opacity: 0; animation: fadeUp 1s 1s forwards;
+}
+.stat { text-align: right; }
+.stat-num {
+  font-family: var(--font-display);
+  font-size: 42px; color: var(--white); line-height: 1;
+}
+.stat-num span { color: var(--gold); font-size: 0.5em; }
+.stat-label {
+  font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--muted); margin-top: 4px;
+}
+
+.hero-scroll-hint {
+  position: absolute; bottom: 40px; left: 60px;
+  display: flex; align-items: center; gap: 12px;
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0; animation: fadeIn 1s 1.4s forwards;
+}
+.scroll-line {
+  width: 1px; height: 60px;
+  background: linear-gradient(180deg, transparent, var(--gold));
+  animation: scrollPulse 2s infinite;
+}
+
+/* ========== SECTION COMMONS ========== */
+section { padding: 120px 60px; }
+.section-label {
+  font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-label::before {
+  content: ''; display: block;
+  width: 30px; height: 1px; background: var(--gold);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(42px, 6vw, 80px);
+  color: var(--white); line-height: 0.95;
+  letter-spacing: 1px;
+}
+.section-title em {
+  font-family: var(--font-serif);
+  font-style: italic; color: var(--gold);
+}
+.section-desc {
+  font-family: var(--font-serif);
+  font-size: 18px; font-style: italic;
+  color: var(--muted); max-width: 520px;
+  margin-top: 16px; line-height: 1.8;
+}
+
+/* ========== MARQUEE ========== */
+.marquee-wrap {
+  background: var(--gold);
+  padding: 14px 0; overflow: hidden;
+  border-top: 1px solid rgba(201,168,76,0.3);
+  border-bottom: 1px solid rgba(201,168,76,0.3);
+}
+.marquee-track {
+  display: flex; gap: 0;
+  animation: marquee 25s linear infinite;
+  white-space: nowrap; width: max-content;
+}
+.marquee-track span {
+  font-family: var(--font-display);
+  font-size: 13px; letter-spacing: 4px;
+  color: var(--black); padding: 0 40px;
+}
+.marquee-track .dot { color: rgba(0,0,0,0.3); }
+
+/* ========== BRAND SECTION ========== */
+.brands { padding: 100px 60px; }
+.brand-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 70px; }
+.brand-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+}
+.brand-tab {
+  padding: 14px 30px; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--muted);
+  cursor: pointer; transition: color 0.3s;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  background: none; border-left: none; border-right: none; border-top: none;
+}
+.brand-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.brand-content { display: none; }
+.brand-content.active { display: block; animation: fadeIn 0.4s; }
+
+.brand-intro {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
+  align-items: center; margin-bottom: 60px;
+}
+.brand-intro-text h3 {
+  font-family: var(--font-display);
+  font-size: 52px; color: var(--white);
+  letter-spacing: 2px; line-height: 1;
+  margin-bottom: 20px;
+}
+.brand-intro-text p {
+  color: var(--muted); line-height: 1.9; font-size: 14px;
+}
+.brand-logo-display {
+  display: flex; justify-content: center; align-items: center;
+  height: 200px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-family: var(--font-display);
+  font-size: 90px; letter-spacing: 10px;
+  color: var(--white); position: relative; overflow: hidden;
+}
+.brand-logo-display::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 50%, var(--gold-dim) 0%, transparent 70%);
+}
+
+/* ========== PRODUCT GRID ========== */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+.product-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  position: relative; overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.3s, box-shadow 0.4s;
+  cursor: pointer;
+}
+.product-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--gold);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 0 1px var(--gold-dim);
+}
+.product-card-img {
+  height: 220px; background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+.product-card-img::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 50%, var(--card) 100%);
+}
+.cam-icon {
+  font-size: 80px; filter: grayscale(0.3);
+  transition: transform 0.5s; user-select: none;
+}
+.product-card:hover .cam-icon { transform: scale(1.08) rotate(-3deg); }
+.product-card-badge {
+  position: absolute; top: 14px; left: 14px;
+  background: var(--gold); color: var(--black);
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 5px 12px; font-weight: 600;
+}
+.product-card-body { padding: 24px; }
+.product-card-brand {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 8px;
+}
+.product-card-name {
+  font-family: var(--font-display);
+  font-size: 22px; color: var(--white); letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.product-card-desc { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+.product-card-specs {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.spec-tag {
+  background: var(--surface); border: 1px solid var(--border);
+  font-size: 10px; letter-spacing: 1px; color: var(--muted);
+  padding: 4px 10px; border-radius: 0;
+}
+.product-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--border); padding-top: 18px;
+}
+.product-price {
+  font-family: var(--font-display);
+  font-size: 26px; color: var(--white); letter-spacing: 1px;
+}
+.product-price .currency { font-size: 14px; color: var(--gold); margin-right: 2px; }
+.add-cart {
+  background: none; border: 1px solid var(--gold);
+  color: var(--gold); padding: 10px 20px;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.3s;
+}
+.add-cart:hover { background: var(--gold); color: var(--black); }
+
+/* ========== NIKON SECTION ========== */
+.nikon-section { background: var(--deep); }
+.nikon-header {
+  display: grid; grid-template-columns: 1fr auto; align-items: end;
+  margin-bottom: 80px; gap: 40px;
+}
+.nikon-logo-badge {
+  font-family: var(--font-display);
+  font-size: 13px; letter-spacing: 6px;
+  color: var(--gold); border: 1px solid var(--gold);
+  padding: 10px 24px; display: inline-block;
+}
+
+.nikon-categories {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--border); margin-bottom: 60px;
+}
+.nikon-cat {
+  background: var(--surface);
+  padding: 40px 30px;
+  transition: background 0.3s;
+  position: relative; overflow: hidden;
+}
+.nikon-cat::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--gold);
+  transform: scaleX(0); transition: transform 0.4s;
+}
+.nikon-cat:hover { background: var(--card); }
+.nikon-cat:hover::before { transform: scaleX(1); }
+.nikon-cat-icon { font-size: 42px; margin-bottom: 20px; display: block; }
+.nikon-cat-name {
+  font-family: var(--font-display);
+  font-size: 24px; color: var(--white); letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+.nikon-cat-count { font-size: 11px; letter-spacing: 2px; color: var(--gold); margin-bottom: 14px; }
+.nikon-cat-desc { font-size: 13px; color: var(--muted); line-height: 1.8; }
+
+.nikon-featured {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px;
+  margin-bottom: 60px;
+}
+.nikon-feat-card {
+  background: var(--card); border: 1px solid var(--border);
+  padding: 50px; position: relative; overflow: hidden;
+}
+.nikon-feat-card::after {
+  content: '';
+  position: absolute; bottom: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, var(--gold-dim) 0%, transparent 70%);
+  pointer-events: none;
+}
+.feat-eyebrow {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 20px;
+}
+.feat-title {
+  font-family: var(--font-display);
+  font-size: 42px; color: var(--white);
+  letter-spacing: 2px; margin-bottom: 16px;
+  line-height: 1;
+}
+.feat-desc { color: var(--muted); font-size: 14px; line-height: 1.9; margin-bottom: 30px; }
+.feat-specs-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-bottom: 30px;
+}
+.feat-spec { border-left: 2px solid var(--gold); padding-left: 14px; }
+.feat-spec-val {
+  font-family: var(--font-display);
+  font-size: 22px; color: var(--white); letter-spacing: 1px;
+}
+.feat-spec-key { font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+
+.nikon-grid-4 {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* ========== ACCESSORIES / EQUIPMENT ========== */
+.equipment-section { background: var(--black); }
+.equip-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px; margin-top: 60px;
+}
+.equip-card {
+  border: 1px solid var(--border);
+  padding: 32px 28px; position: relative;
+  overflow: hidden; transition: border-color 0.3s, transform 0.3s;
+}
+.equip-card:hover { border-color: var(--gold); transform: translateY(-4px); }
+.equip-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--gold-dim) 0%, transparent 60%);
+  opacity: 0; transition: opacity 0.4s;
+}
+.equip-card:hover::before { opacity: 1; }
+.equip-icon { font-size: 36px; margin-bottom: 20px; display: block; position: relative; }
+.equip-name {
+  font-family: var(--font-display);
+  font-size: 20px; color: var(--white); letter-spacing: 1px;
+  margin-bottom: 10px; position: relative;
+}
+.equip-desc { font-size: 13px; color: var(--muted); line-height: 1.8; position: relative; margin-bottom: 18px; }
+.equip-price { font-family: var(--font-display); font-size: 22px; color: var(--gold); letter-spacing: 1px; position: relative; }
+
+/* ========== SONY & CANON SECTION ========== */
+.brand-duo {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--border); margin-top: 60px;
+}
+.brand-panel {
+  background: var(--surface); padding: 80px 60px;
+  position: relative; overflow: hidden;
+}
+.brand-panel::after {
+  content: attr(data-brand);
+  position: absolute; right: -20px; bottom: -20px;
+  font-family: var(--font-display);
+  font-size: 140px; color: rgba(255,255,255,0.02);
+  letter-spacing: -5px; line-height: 1;
+  pointer-events: none;
+}
+.brand-panel h3 {
+  font-family: var(--font-display);
+  font-size: 52px; color: var(--white);
+  letter-spacing: 3px; margin-bottom: 20px;
+}
+.brand-panel p { color: var(--muted); font-size: 14px; line-height: 1.9; margin-bottom: 30px; }
+.brand-highlights { display: flex; flex-direction: column; gap: 12px; margin-bottom: 36px; }
+.highlight {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px; border: 1px solid var(--border);
+  transition: border-color 0.3s;
+}
+.highlight:hover { border-color: var(--gold); }
+.highlight-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.highlight-text h5 {
+  font-size: 12px; letter-spacing: 1.5px; color: var(--white);
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.highlight-text p { font-size: 12px; color: var(--muted); line-height: 1.7; }
+
+/* ========== WHY HRP ========== */
+.why-section { background: var(--surface); }
+.why-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--border); margin-top: 70px;
+}
+.why-card {
+  background: var(--card); padding: 50px 36px;
+  position: relative; overflow: hidden;
+  transition: background 0.3s;
+}
+.why-card:hover { background: #1f1f1f; }
+.why-num {
+  font-family: var(--font-display);
+  font-size: 80px; color: rgba(201,168,76,0.08);
+  position: absolute; top: 20px; right: 20px;
+  line-height: 1; letter-spacing: -2px;
+}
+.why-icon { font-size: 34px; margin-bottom: 24px; display: block; }
+.why-title {
+  font-family: var(--font-display);
+  font-size: 22px; color: var(--white);
+  letter-spacing: 1px; margin-bottom: 14px;
+}
+.why-desc { font-size: 13px; color: var(--muted); line-height: 1.9; }
+
+/* ========== TESTIMONIALS ========== */
+.testimonials { background: var(--black); }
+.testimonial-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 24px; margin-top: 70px;
+}
+.testimonial-card {
+  border: 1px solid var(--border); padding: 40px;
+  position: relative; transition: border-color 0.3s, transform 0.3s;
+}
+.testimonial-card:hover { border-color: var(--gold); transform: translateY(-4px); }
+.testimonial-card::before {
+  content: '"';
+  font-family: var(--font-serif);
+  font-size: 100px; color: var(--gold);
+  opacity: 0.15; position: absolute;
+  top: -10px; left: 30px; line-height: 1;
+}
+.testimonial-text {
+  font-family: var(--font-serif);
+  font-size: 17px; font-style: italic;
+  color: var(--text); line-height: 1.8;
+  margin-bottom: 28px; position: relative;
+}
+.testimonial-author { display: flex; align-items: center; gap: 14px; }
+.author-avatar {
+  width: 44px; height: 44px;
+  background: var(--gold);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-size: 18px; color: var(--black);
+  flex-shrink: 0;
+}
+.author-name {
+  font-size: 13px; color: var(--white);
+  font-weight: 500; margin-bottom: 3px;
+}
+.author-role { font-size: 11px; color: var(--gold); letter-spacing: 1.5px; }
+
+/* ========== CONTACT / FORM ========== */
+.contact-section {
+  background: var(--deep);
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.contact-info {
+  padding: 120px 80px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+.contact-form-wrap { padding: 120px 80px; }
+
+.contact-detail {
+  display: flex; align-items: flex-start; gap: 18px;
+  margin-bottom: 36px;
+}
+.contact-icon { font-size: 22px; flex-shrink: 0; margin-top: 3px; }
+.contact-detail-text h5 {
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 6px;
+}
+.contact-detail-text p { font-size: 14px; color: var(--text); line-height: 1.7; }
+
+/* FORM */
+.form-group { margin-bottom: 28px; }
+.form-label {
+  display: block; font-size: 10px; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 10px;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--surface);
+  border: 1px solid var(--border); color: var(--white);
+  padding: 16px 20px; font-family: var(--font-body);
+  font-size: 14px; outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  appearance: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+}
+.form-input::placeholder, .form-textarea::placeholder { color: var(--border); }
+.form-textarea { min-height: 120px; resize: vertical; }
+.form-select option { background: var(--surface); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.btn-submit {
+  width: 100%; background: var(--gold); color: var(--black);
+  border: none; padding: 18px; font-family: var(--font-body);
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  font-weight: 600; cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  position: relative; overflow: hidden;
+}
+.btn-submit:hover { background: var(--gold-light); transform: translateY(-2px); }
+
+/* ========== FOOTER ========== */
+footer {
+  background: var(--black);
+  border-top: 1px solid var(--border);
+  padding: 80px 60px 40px;
+}
+.footer-grid {
+  display: grid; grid-template-columns: 1.8fr 1fr 1fr 1fr;
+  gap: 60px; margin-bottom: 60px;
+}
+.footer-brand p { font-size: 13px; color: var(--muted); line-height: 1.9; margin-top: 20px; max-width: 280px; }
+.footer-social { display: flex; gap: 14px; margin-top: 24px; }
+.social-btn {
+  width: 38px; height: 38px;
+  border: 1px solid var(--border); color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; text-decoration: none;
+  transition: border-color 0.3s, color 0.3s;
+}
+.social-btn:hover { border-color: var(--gold); color: var(--gold); }
+.footer-col h5 {
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 24px;
+}
+.footer-col ul { list-style: none; }
+.footer-col li { margin-bottom: 12px; }
+.footer-col a {
+  font-size: 13px; color: var(--muted); text-decoration: none;
+  transition: color 0.3s;
+}
+.footer-col a:hover { color: var(--white); }
+.footer-bottom {
+  border-top: 1px solid var(--border);
+  padding-top: 30px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-bottom p { font-size: 12px; color: var(--border); }
+.footer-bottom .hrp-mark {
+  font-family: var(--font-display);
+  font-size: 13px; letter-spacing: 4px; color: var(--gold);
+}
+
+/* ========== DIVIDERS ========== */
+.divider-gold {
+  height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 0; border: none; opacity: 0.4;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.2); }
+}
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0; transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1100px) {
+  nav { padding: 18px 30px; }
+  section { padding: 80px 30px; }
+  .hero { padding: 0 30px; }
+  .hero-stats { right: 30px; }
+  .hero-scroll-hint { left: 30px; }
+  .nikon-featured { grid-template-columns: 1fr; }
+  .nikon-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .why-grid { grid-template-columns: repeat(2, 1fr); }
+  .brand-duo { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+  .contact-section { grid-template-columns: 1fr; }
+  .contact-info, .contact-form-wrap { padding: 80px 40px; }
+}
+@media (max-width: 768px) {
+  nav { padding: 16px 20px; }
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  section { padding: 60px 20px; }
+  .hero { padding: 0 20px; min-height: 100vh; align-items: flex-end; padding-bottom: 100px; }
+  .hero h1 { font-size: 60px; }
+  .hero-stats { display: none; }
+  .hero-actions { flex-direction: column; align-items: flex-start; }
+  .brand-intro { grid-template-columns: 1fr; }
+  .brands { padding: 60px 20px; }
+  .nikon-categories { grid-template-columns: 1fr; }
+  .nikon-grid-4 { grid-template-columns: 1fr 1fr; }
+  .why-grid { grid-template-columns: 1fr; }
+  .testimonial-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .contact-info, .contact-form-wrap { padding: 60px 20px; }
+  body { cursor: auto; }
+  .cursor, .cursor-ring { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- ============================
+     NAVIGATION
+============================= -->
+<nav id="navbar">
+  <a href="#" class="logo">
+    <!-- HRP SVG Logo -->
+    <div class="logo-mark">
+      <svg viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Outer ring -->
+        <circle cx="23" cy="23" r="21.5" stroke="#c9a84c" stroke-width="1"/>
+        <!-- Lens aperture blades -->
+        <circle cx="23" cy="23" r="13" fill="#141414" stroke="#c9a84c" stroke-width="0.8"/>
+        <circle cx="23" cy="23" r="7" fill="#c9a84c" opacity="0.9"/>
+        <circle cx="23" cy="23" r="3.5" fill="#080808"/>
+        <!-- Aperture lines -->
+        <line x1="23" y1="10" x2="23" y2="4" stroke="#c9a84c" stroke-width="1.2"/>
+        <line x1="23" y1="36" x2="23" y2="42" stroke="#c9a84c" stroke-width="1.2"/>
+        <line x1="10" y1="23" x2="4" y2="23" stroke="#c9a84c" stroke-width="1.2"/>
+        <line x1="36" y1="23" x2="42" y2="23" stroke="#c9a84c" stroke-width="1.2"/>
+        <line x1="13.2" y1="13.2" x2="8.8" y2="8.8" stroke="#c9a84c" stroke-width="1.2"/>
+        <line x1="32.8" y1="32.8" x2="37.2" y2="37.2" stroke="#c9a84c" stroke-width="1.2"/>
+        <line x1="32.8" y1="13.2" x2="37.2" y2="8.8" stroke="#c9a84c" stroke-width="1.2"/>
+        <line x1="13.2" y1="32.8" x2="8.8" y2="37.2" stroke="#c9a84c" stroke-width="1.2"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <span class="logo-name">HRP</span>
+      <span class="logo-tagline">High Resolution Photography</span>
+    </div>
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="#brands">Brands</a></li>
+    <li><a href="#nikon">Nikon</a></li>
+    <li><a href="#equipment">Equipment</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#contact" class="nav-cta">Visit Store</a></li>
+  </ul>
+
+  <div class="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- ============================
+     HERO
+============================= -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-grid-lines"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">Est. 2010 — Karachi, Pakistan</div>
+    <h1>
+      CAPTURE<br>
+      THE <em>Light</em><br>
+      PERFECTLY
+    </h1>
+    <p class="hero-sub">
+      Premium cameras, lenses & accessories from the world's finest optical brands — curated for professionals and passionate creators.
+    </p>
+    <div class="hero-actions">
+      <a href="#brands" class="btn-primary"><span>Explore Products</span> →</a>
+      <a href="#nikon" class="btn-ghost">Nikon Collection</a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-num">15<span>+</span></div>
+      <div class="stat-label">Years in Business</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">3K<span>+</span></div>
+      <div class="stat-label">Products Available</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">98<span>%</span></div>
+      <div class="stat-label">Customer Satisfaction</div>
+    </div>
+  </div>
+
+  <div class="hero-scroll-hint">
+    <div class="scroll-line"></div>
+    Scroll to Explore
+  </div>
+</section>
+
+<!-- ============================
+     MARQUEE
+============================= -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span>NIKON</span><span class="dot">◆</span>
+    <span>SONY</span><span class="dot">◆</span>
+    <span>CANON</span><span class="dot">◆</span>
+    <span>DSLR CAMERAS</span><span class="dot">◆</span>
+    <span>MIRRORLESS</span><span class="dot">◆</span>
+    <span>PRIME LENSES</span><span class="dot">◆</span>
+    <span>LED LIGHTS</span><span class="dot">◆</span>
+    <span>TRIPODS</span><span class="dot">◆</span>
+    <span>FILTERS</span><span class="dot">◆</span>
+    <span>HRP STORE</span><span class="dot">◆</span>
+    <!-- duplicate for seamless loop -->
+    <span>NIKON</span><span class="dot">◆</span>
+    <span>SONY</span><span class="dot">◆</span>
+    <span>CANON</span><span class="dot">◆</span>
+    <span>DSLR CAMERAS</span><span class="dot">◆</span>
+    <span>MIRRORLESS</span><span class="dot">◆</span>
+    <span>PRIME LENSES</span><span class="dot">◆</span>
+    <span>LED LIGHTS</span><span class="dot">◆</span>
+    <span>TRIPODS</span><span class="dot">◆</span>
+    <span>FILTERS</span><span class="dot">◆</span>
+    <span>HRP STORE</span><span class="dot">◆</span>
+  </div>
+</div>
+
+<!-- ============================
+     BRANDS — SONY & CANON
+============================= -->
+<section class="brands reveal" id="brands">
+  <div class="brand-header">
+    <div>
+      <div class="section-label">World-Class Brands</div>
+      <h2 class="section-title">ICONIC <em>Makers</em></h2>
+    </div>
+    <div class="brand-tabs">
+      <button class="brand-tab active" onclick="switchTab('sony')">Sony</button>
+      <button class="brand-tab" onclick="switchTab('canon')">Canon</button>
+    </div>
+  </div>
+
+  <!-- SONY TAB -->
+  <div class="brand-content active" id="tab-sony">
+    <div class="brand-intro">
+      <div class="brand-intro-text">
+        <h3>SONY ALPHA</h3>
+        <p>Sony's Alpha series has redefined the mirrorless camera landscape. Built on cutting-edge full-frame CMOS sensors and BIONZ XR image processing engines, Sony cameras deliver extraordinary low-light performance, blazing-fast autofocus with real-time Eye AF and Animal AF, and 4K video capabilities that rival dedicated cinema cameras. Whether you shoot sports, portraits, wildlife, or commercial work — Sony gives you an unfair advantage.</p>
+      </div>
+      <div class="brand-logo-display" data-brand="SONY" style="font-size:60px; letter-spacing: 12px;">SONY</div>
+    </div>
+    <div class="product-grid">
+      <div class="product-card reveal reveal-delay-1">
+        <div class="product-card-img">
+          <span class="product-card-badge">Best Seller</span>
+          <div class="cam-icon">📷</div>
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-brand">Sony Alpha</div>
+          <div class="product-card-name">A7 IV</div>
+          <div class="product-card-desc">33MP full-frame BSI CMOS sensor. 4K 60p oversampled video. 759-point phase-detection AF covering 94% of the frame. Perfect for hybrid shooters.</div>
+          <div class="product-card-specs">
+            <span class="spec-tag">33 MP</span>
+            <span class="spec-tag">4K 60p</span>
+            <span class="spec-tag">Full-Frame</span>
+            <span class="spec-tag">ISO 102400</span>
+          </div>
+          <div class="product-card-footer">
+            <div class="product-price"><span class="currency">$</span>2,499</div>
+            <button class="add-cart">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+      <div class="product-card reveal reveal-delay-2">
+        <div class="product-card-img">
+          <span class="product-card-badge">Pro Pick</span>
+          <div class="cam-icon">🎥</div>
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-brand">Sony Alpha</div>
+          <div class="product-card-name">A7R V</div>
+          <div class="product-card-desc">61MP full-frame sensor delivering magazine-quality imagery. AI-based subject recognition, 8K timelapse, and in-body 8-stop image stabilization.</div>
+          <div class="product-card-specs">
+            <span class="spec-tag">61 MP</span>
+            <span class="spec-tag">8K Timelapse</span>
+            <span class="spec-tag">8-stop IBIS</span>
+          </div>
+          <div class="product-card-footer">
+            <div class="product-price"><span class="currency">$</span>3,499</div>
+            <button class="add-cart">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+      <div class="product-card reveal reveal-delay-3">
+        <div class="product-card-img">
+          <div class="cam-icon">🔭</div>
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-brand">Sony FE</div>
+          <div class="product-card-name">24-70mm f/2.8 GM II</div>
+          <div class="product-card-desc">Sony's flagship standard zoom lens. Redesigned with four XD linear motors for near-silent, incredibly fast autofocus. 20% lighter than its predecessor.</div>
+          <div class="product-card-specs">
+            <span class="spec-tag">f/2.8</span>
+            <span class="spec-tag">XD Motor</span>
+            <span class="spec-tag">G Master</span>
+          </div>
+          <div class="product-card-footer">
+            <div class="product-price"><span class="currency">$</span>2,299</div>
+            <button class="add-cart">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANON TAB -->
+  <div class="brand-content" id="tab-canon">
+    <div class="brand-intro">
+      <div class="brand-intro-text">
+        <h3>CANON EOS</h3>
+        <p>Canon's EOS and RF systems represent decades of optical engineering mastery. Their DIGIC X processors and Dual Pixel CMOS AF technology deliver the smoothest, most reliable autofocus in the industry — beloved by portrait and video professionals worldwide. With a vast RF lens ecosystem and industry-first color science, Canon cameras capture skin tones with unmatched accuracy and warmth.</p>
+      </div>
+      <div class="brand-logo-display" data-brand="CANON" style="font-size:56px; letter-spacing: 10px;">CANON</div>
+    </div>
+    <div class="product-grid">
+      <div class="product-card reveal reveal-delay-1">
+        <div class="product-card-img">
+          <span class="product-card-badge">New Arrival</span>
+          <div class="cam-icon">📷</div>
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-brand">Canon EOS</div>
+          <div class="product-card-name">R5 C</div>
+          <div class="product-card-desc">The ultimate hybrid cinema camera. 8K RAW recording with unlimited record time, 45MP stills capability, and dual card slots. The tool for serious filmmakers.</div>
+          <div class="product-card-specs">
+            <span class="spec-tag">8K RAW</span>
+            <span class="spec-tag">45 MP</span>
+            <span class="spec-tag">Unlimited Record</span>
+          </div>
+          <div class="product-card-footer">
+            <div class="product-price"><span class="currency">$</span>3,899</div>
+            <button class="add-cart">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+      <div class="product-card reveal reveal-delay-2">
+        <div class="product-card-img">
+          <span class="product-card-badge">Recommended</span>
+          <div class="cam-icon">🎞</div>
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-brand">Canon EOS</div>
+          <div class="product-card-name">R6 Mark II</div>
+          <div class="product-card-desc">24.2MP sensor with 40fps burst, eye AF that tracks even moving subjects in pitch-dark conditions, and 6.5-stop in-body stabilization. Outstanding value.</div>
+          <div class="product-card-specs">
+            <span class="spec-tag">24 MP</span>
+            <span class="spec-tag">40fps Burst</span>
+            <span class="spec-tag">6.5-stop IBIS</span>
+          </div>
+          <div class="product-card-footer">
+            <div class="product-price"><span class="currency">$</span>2,499</div>
+            <button class="add-cart">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+      <div class="product-card reveal reveal-delay-3">
+        <div class="product-card-img">
+          <div class="cam-icon">🔭</div>
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-brand">Canon RF</div>
+          <div class="product-card-name">85mm f/1.2L USM</div>
+          <div class="product-card-desc">Arguably the finest portrait lens ever made. Creamy bokeh, impeccable sharpness wide open, and a three-dimensional rendering that flatters every subject.</div>
+          <div class="product-card-specs">
+            <span class="spec-tag">f/1.2</span>
+            <span class="spec-tag">L-Series</span>
+            <span class="spec-tag">USM AF</span>
+          </div>
+          <div class="product-card-footer">
+            <div class="product-price"><span class="currency">$</span>2,699</div>
+            <button class="add-cart">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider-gold">
+
+<!-- ============================
+     NIKON — DEEP DIVE
+============================= -->
+<section class="nikon-section" id="nikon">
+  <div class="nikon-header reveal">
+    <div>
+      <div class="section-label">Full Range Available</div>
+      <h2 class="section-title">NIKON<br><em>Universe</em></h2>
+      <p class="section-desc">From legendary DSLRs to cutting-edge mirrorless systems, HRP carries the widest Nikon selection in Pakistan.</p>
+    </div>
+    <div class="nikon-logo-badge">NIKON — Official Dealer</div>
+  </div>
+
+  <!-- Categories -->
+  <div class="nikon-categories reveal">
+    <div class="nikon-cat">
+      <span class="nikon-cat-icon">📸</span>
+      <div class="nikon-cat-name">DSLR CAMERAS</div>
+      <div class="nikon-cat-count">12 Models In-Stock</div>
+      <p class="nikon-cat-desc">Nikon's F-mount DSLRs remain the gold standard for optical viewfinder shooting. Robust, weather-sealed bodies with massive battery life and unmatched lens compatibility across 60+ years of Nikkor glass.</p>
+    </div>
+    <div class="nikon-cat">
+      <span class="nikon-cat-icon">⚡</span>
+      <div class="nikon-cat-name">MIRRORLESS</div>
+      <div class="nikon-cat-count">8 Models In-Stock</div>
+      <p class="nikon-cat-desc">Nikon's Z-system mirrorless cameras feature the world's largest lens mount diameter, enabling extraordinary optical designs impossible on any other system. Fast, silent, and future-proof.</p>
+    </div>
+    <div class="nikon-cat">
+      <span class="nikon-cat-icon">🔭</span>
+      <div class="nikon-cat-name">NIKKOR LENSES</div>
+      <div class="nikon-cat-count">40+ Lenses Available</div>
+      <p class="nikon-cat-desc">From ultra-wide fisheyes to super-telephoto 800mm primes, Nikon's Nikkor Z and F-mount lens lineup covers every creative need with legendary optical quality.</p>
+    </div>
+    <div class="nikon-cat">
+      <span class="nikon-cat-icon">💡</span>
+      <div class="nikon-cat-name">LED LIGHTS</div>
+      <div class="nikon-cat-count">15+ Models In-Stock</div>
+      <p class="nikon-cat-desc">Studio-grade Nikon Speedlights and compatible LED panel systems for portrait, product, and video work. From compact on-camera flash to full studio strobe setups.</p>
+    </div>
+    <div class="nikon-cat">
+      <span class="nikon-cat-icon">🎒</span>
+      <div class="nikon-cat-name">ACCESSORIES</div>
+      <div class="nikon-cat-count">100+ Items In-Stock</div>
+      <p class="nikon-cat-desc">Genuine Nikon batteries, grips, remote controls, filters, straps, and cleaning kits. Everything you need to get the most out of your Nikon system.</p>
+    </div>
+    <div class="nikon-cat">
+      <span class="nikon-cat-icon">🎬</span>
+      <div class="nikon-cat-name">VIDEO GEAR</div>
+      <div class="nikon-cat-count">20+ Items In-Stock</div>
+      <p class="nikon-cat-desc">Cage systems, follow-focus units, and Nikon-compatible video accessories for filmmakers using Nikon Z cameras for professional video production.</p>
+    </div>
+  </div>
+
+  <!-- Featured Products -->
+  <div class="nikon-featured reveal">
+    <div class="nikon-feat-card">
+      <div class="feat-eyebrow">★ HRP FEATURED PICK</div>
+      <div class="feat-title">NIKON Z9</div>
+      <p class="feat-desc">The Z9 is Nikon's professional flagship — the first camera to eliminate the mechanical shutter entirely. With a stacked CMOS sensor delivering 45.7MP at 20fps with zero blackout, it captures the decisive moment every single time. Sports photographers and wildlife shooters have switched systems for this camera alone.</p>
+      <div class="feat-specs-grid">
+        <div class="feat-spec">
+          <div class="feat-spec-val">45.7MP</div>
+          <div class="feat-spec-key">Resolution</div>
+        </div>
+        <div class="feat-spec">
+          <div class="feat-spec-val">8K 60p</div>
+          <div class="feat-spec-key">Video</div>
+        </div>
+        <div class="feat-spec">
+          <div class="feat-spec-val">20fps</div>
+          <div class="feat-spec-key">Burst Speed</div>
+        </div>
+        <div class="feat-spec">
+          <div class="feat-spec-val">ISO 102400</div>
+          <div class="feat-spec-key">Max ISO</div>
+        </div>
+      </div>
+      <div class="product-card-footer" style="border-top: 1px solid var(--border); padding-top: 20px; margin-top: 0; display: flex; align-items:center; justify-content:space-between;">
+        <div class="product-price"><span class="currency">$</span>5,499</div>
+        <button class="add-cart">Order Now</button>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      <div class="nikon-feat-card" style="flex:1;">
+        <div class="feat-eyebrow">MIRRORLESS</div>
+        <div class="feat-title" style="font-size:28px;">NIKON Z8</div>
+        <p class="feat-desc" style="font-size:13px;">Same stacked sensor as the Z9 in a lighter, more accessible body. 45.7MP, 8K video, and advanced subject recognition AF — all for considerably less investment.</p>
+        <div class="product-card-footer" style="border-top: 1px solid var(--border); padding-top:16px; display:flex; align-items:center; justify-content:space-between;">
+          <div class="product-price" style="font-size:22px;"><span class="currency">$</span>3,999</div>
+          <button class="add-cart">Add to Cart</button>
+        </div>
+      </div>
+      <div class="nikon-feat-card" style="flex:1;">
+        <div class="feat-eyebrow">DSLR WORKHORSE</div>
+        <div class="feat-title" style="font-size:28px;">NIKON D850</div>
+        <p class="feat-desc" style="font-size:13px;">The DSLR that refuses to be replaced. 45.7MP backlit CMOS, 7fps burst, and weather sealing that has survived every climate on Earth. A studio legend.</p>
+        <div class="product-card-footer" style="border-top: 1px solid var(--border); padding-top:16px; display:flex; align-items:center; justify-content:space-between;">
+          <div class="product-price" style="font-size:22px;"><span class="currency">$</span>2,799</div>
+          <button class="add-cart">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nikon Lens Grid -->
+  <div class="section-label reveal">Nikkor Lens Collection</div>
+  <div class="nikon-grid-4 reveal">
+    <div class="product-card">
+      <div class="product-card-img" style="height:160px;">
+        <div class="cam-icon" style="font-size:55px;">🔭</div>
+      </div>
+      <div class="product-card-body">
+        <div class="product-card-brand">NIKKOR Z</div>
+        <div class="product-card-name" style="font-size:18px;">50mm f/1.2 S</div>
+        <div class="product-card-desc" style="font-size:12px;">The benchmark fast-fifty. Scientifically designed to render subjects with stunning separation.</div>
+        <div class="product-card-footer">
+          <div class="product-price" style="font-size:20px;"><span class="currency">$</span>2,099</div>
+          <button class="add-cart" style="padding:8px 14px; font-size:9px;">Buy</button>
+        </div>
+      </div>
+    </div>
+    <div class="product-card">
+      <div class="product-card-img" style="height:160px;">
+        <div class="cam-icon" style="font-size:55px;">🔭</div>
+      </div>
+      <div class="product-card-body">
+        <div class="product-card-brand">NIKKOR Z</div>
+        <div class="product-card-name" style="font-size:18px;">24-70mm f/2.8 S</div>
+        <div class="product-card-desc" style="font-size:12px;">Professional standard zoom with multi-focus system and ARNEO coat for extreme flare control.</div>
+        <div class="product-card-footer">
+          <div class="product-price" style="font-size:20px;"><span class="currency">$</span>2,399</div>
+          <button class="add-cart" style="padding:8px 14px; font-size:9px;">Buy</button>
+        </div>
+      </div>
+    </div>
+    <div class="product-card">
+      <div class="product-card-img" style="height:160px;">
+        <div class="cam-icon" style="font-size:55px;">🔭</div>
+      </div>
+      <div class="product-card-body">
+        <div class="product-card-brand">NIKKOR Z</div>
+        <div class="product-card-name" style="font-size:18px;">70-200mm f/2.8 VR S</div>
+        <div class="product-card-desc" style="font-size:12px;">5.5-stop optical VR. Razor sharp at 200mm even in challenging light. Sports & events essential.</div>
+        <div class="product-card-footer">
+          <div class="product-price" style="font-size:20px;"><span class="currency">$</span>2,799</div>
+          <button class="add-cart" style="padding:8px 14px; font-size:9px;">Buy</button>
+        </div>
+      </div>
+    </div>
+    <div class="product-card">
+      <div class="product-card-img" style="height:160px;">
+        <div class="cam-icon" style="font-size:55px;">🔭</div>
+      </div>
+      <div class="product-card-body">
+        <div class="product-card-brand">NIKKOR Z</div>
+        <div class="product-card-name" style="font-size:18px;">85mm f/1.2 S</div>
+        <div class="product-card-desc" style="font-size:12px;">Nikon's portrait king. Breathtaking bokeh and three-dimensional subject rendering at f/1.2.</div>
+        <div class="product-card-footer">
+          <div class="product-price" style="font-size:20px;"><span class="currency">$</span>2,499</div>
+          <button class="add-cart" style="padding:8px 14px; font-size:9px;">Buy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================
+     EQUIPMENT / ACCESSORIES
+============================= -->
+<section class="equipment-section" id="equipment">
+  <div class="reveal">
+    <div class="section-label">Studio Ready</div>
+    <h2 class="section-title">PROFESSIONAL<br><em>Equipment</em></h2>
+    <p class="section-desc">Every tool a serious photographer or filmmaker needs — from the lens cap to the studio ceiling.</p>
+  </div>
+
+  <div class="equip-grid">
+    <div class="equip-card reveal reveal-delay-1">
+      <span class="equip-icon">💡</span>
+      <div class="equip-name">LED Bi-Color Panels</div>
+      <p class="equip-desc">Professional 200W bi-color LED panels with CRI 96+ output. Adjustable from 2700K warm to 6500K daylight. Compatible with Bowens mount modifiers.</p>
+      <div class="equip-price">From $199</div>
+    </div>
+    <div class="equip-card reveal reveal-delay-2">
+      <span class="equip-icon">📡</span>
+      <div class="equip-name">Nikon SB-5000 Speedlight</div>
+      <p class="equip-desc">Nikon's top-of-the-line flash with radio-controlled AWL, overheat protection, and a guide number of 34.5m at ISO 100. The professional's on-camera flash solution.</p>
+      <div class="equip-price">$596</div>
+    </div>
+    <div class="equip-card reveal reveal-delay-3">
+      <span class="equip-icon">🎚</span>
+      <div class="equip-name">Carbon Fibre Tripods</div>
+      <p class="equip-desc">Ultra-lightweight 10-layer carbon fibre tripods supporting up to 18kg payload. Ball heads with arca-swiss quick-release plates included. From desktop to full studio height.</p>
+      <div class="equip-price">From $249</div>
+    </div>
+    <div class="equip-card reveal reveal-delay-1">
+      <span class="equip-icon">🔲</span>
+      <div class="equip-name">Camera Cages & Rigs</div>
+      <p class="equip-desc">SmallRig and Tilta camera cages engineered specifically for Nikon Z, Sony Alpha, and Canon EOS R bodies. Cold shoes, NATO rails, and Rosette mounts included.</p>
+      <div class="equip-price">From $89</div>
+    </div>
+    <div class="equip-card reveal reveal-delay-2">
+      <span class="equip-icon">🔴</span>
+      <div class="equip-name">Lens Filters</div>
+      <p class="equip-desc">B+W, Kenko, and NiSi circular polarisers, ND filters (3-stop to 15-stop), UV protectors, and gradient ND systems for landscape photographers.</p>
+      <div class="equip-price">From $29</div>
+    </div>
+    <div class="equip-card reveal reveal-delay-3">
+      <span class="equip-icon">🖥</span>
+      <div class="equip-name">Monitor Calibrators</div>
+      <p class="equip-desc">X-Rite i1Display Studio and Calibrite ColorChecker displays for accurate colour-managed editing workflows. Essential for print and commercial photographers.</p>
+      <div class="equip-price">From $149</div>
+    </div>
+    <div class="equip-card reveal reveal-delay-1">
+      <span class="equip-icon">🎙</span>
+      <div class="equip-name">On-Camera Microphones</div>
+      <p class="equip-desc">Rode VideoMic NTG and DJI Mic 2 wireless systems. Broadcast-quality audio for video content creators, wedding filmmakers, and documentary producers.</p>
+      <div class="equip-price">From $79</div>
+    </div>
+    <div class="equip-card reveal reveal-delay-2">
+      <span class="equip-icon">🔋</span>
+      <div class="equip-name">Batteries & Grips</div>
+      <p class="equip-desc">Genuine Nikon, Sony, and Canon batteries plus third-party alternatives. Vertical battery grips that double your shooting time and add a vertical shutter release.</p>
+      <div class="equip-price">From $49</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider-gold">
+
+<!-- ============================
+     SONY & CANON DEEP DIVE
+============================= -->
+<section style="padding: 100px 60px; background: var(--black);" id="about">
+  <div class="reveal">
+    <div class="section-label">Brand Stories</div>
+    <h2 class="section-title">BUILT BY <em>Masters</em></h2>
+  </div>
+  <div class="brand-duo reveal">
+    <div class="brand-panel" data-brand="SONY">
+      <h3>SONY</h3>
+      <p>Sony entered the camera market with one vision: combine their world-leading electronics expertise with precision optics to build cameras that simply see more. The Alpha series, built on their proprietary Exmor R and Exmor RS back-illuminated sensors, captures light with a sensitivity and dynamic range that was impossible ten years ago.</p>
+      <p>Sony's Real-Time Eye AF was a revelation for portrait photographers, tracking subjects across the frame with uncanny precision — even with subjects wearing glasses or turning away from the camera. Their video capabilities rival dedicated cinema cameras at a fraction of the cost.</p>
+      <div class="brand-highlights">
+        <div class="highlight">
+          <span class="highlight-icon">⚡</span>
+          <div class="highlight-text">
+            <h5>Exmor RS Stacked Sensor</h5>
+            <p>Ultra-fast readout speeds that virtually eliminate rolling shutter distortion during video and high-speed shooting.</p>
+          </div>
+        </div>
+        <div class="highlight">
+          <span class="highlight-icon">👁</span>
+          <div class="highlight-text">
+            <h5>Real-Time Eye & Subject AF</h5>
+            <p>Tracks humans, animals, birds, insects, vehicles, and aircraft with continuous, reliable autofocus lock.</p>
+          </div>
+        </div>
+        <div class="highlight">
+          <span class="highlight-icon">🎬</span>
+          <div class="highlight-text">
+            <h5>Cinema-Grade Video</h5>
+            <p>S-Log3 and S-Cinetone colour profiles deliver film-industry colour science directly in-camera.</p>
+          </div>
+        </div>
+      </div>
+      <a href="#contact" class="btn-ghost" style="font-size:10px;">Explore Sony Range →</a>
+    </div>
+    <div class="brand-panel" data-brand="CANON">
+      <h3>CANON</h3>
+      <p>For over 80 years, Canon has been synonymous with image quality that moves people. Their colour science — the warmth in skin tones, the accuracy of greens, the delicacy of highlights — has made Canon the default choice of portrait, wedding, and fashion photographers around the world.</p>
+      <p>The RF mount era represents Canon's most ambitious leap forward. The 54mm internal diameter allows lens designs with optical elements closer to the sensor than ever before, enabling faster apertures, better corner sharpness, and more dramatic rendering characteristics.</p>
+      <div class="brand-highlights">
+        <div class="highlight">
+          <span class="highlight-icon">🎨</span>
+          <div class="highlight-text">
+            <h5>Canon Colour Science</h5>
+            <p>Decades of R&D have produced a colour rendering engine that captures human skin tones with extraordinary warmth and accuracy.</p>
+          </div>
+        </div>
+        <div class="highlight">
+          <span class="highlight-icon">🔁</span>
+          <div class="highlight-text">
+            <h5>Dual Pixel CMOS AF</h5>
+            <p>Every pixel on Canon's sensor acts as a phase-detection AF point, creating buttery-smooth continuous focus for stills and video.</p>
+          </div>
+        </div>
+        <div class="highlight">
+          <span class="highlight-icon">🏗</span>
+          <div class="highlight-text">
+            <h5>RF Mount Innovation</h5>
+            <p>The world's widest mirrorless lens mount enables optical designs that were physically impossible on previous camera systems.</p>
+          </div>
+        </div>
+      </div>
+      <a href="#contact" class="btn-ghost" style="font-size:10px;">Explore Canon Range →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================
+     WHY HRP
+============================= -->
+<section class="why-section">
+  <div class="reveal" style="text-align:center; margin-bottom:0;">
+    <div class="section-label" style="justify-content:center;">Why Choose HRP</div>
+    <h2 class="section-title">THE HRP <em>Promise</em></h2>
+  </div>
+  <div class="why-grid reveal">
+    <div class="why-card">
+      <div class="why-num">01</div>
+      <span class="why-icon">🏆</span>
+      <div class="why-title">100% Authentic</div>
+      <p class="why-desc">Every product at HRP is sourced directly from brand-authorised distributors. You receive genuine warranty cards, international guarantee coverage, and peace of mind.</p>
+    </div>
+    <div class="why-card">
+      <div class="why-num">02</div>
+      <span class="why-icon">🧠</span>
+      <div class="why-title">Expert Advice</div>
+      <p class="why-desc">Our team consists of working photographers and videographers. When you ask a question, you get a real answer from someone who has used the gear in the field.</p>
+    </div>
+    <div class="why-card">
+      <div class="why-num">03</div>
+      <span class="why-icon">🔧</span>
+      <div class="why-title">After-Sales Service</div>
+      <p class="why-desc">HRP operates a fully equipped in-house service centre for sensor cleaning, lens calibration, and warranty repairs — the only one of its kind in Karachi.</p>
+    </div>
+    <div class="why-card">
+      <div class="why-num">04</div>
+      <span class="why-icon">💳</span>
+      <div class="why-title">Easy Installments</div>
+      <p class="why-desc">Own your dream camera today. HRP offers 0% installment plans on all major bank credit cards with tenures up to 24 months. No hidden charges.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================
+     TESTIMONIALS
+============================= -->
+<section class="testimonials">
+  <div class="reveal">
+    <div class="section-label">Client Voices</div>
+    <h2 class="section-title">TRUSTED BY<br><em>Professionals</em></h2>
+  </div>
+  <div class="testimonial-grid reveal">
+    <div class="testimonial-card">
+      <p class="testimonial-text">HRP is the only place I trust for my Nikon equipment in Pakistan. Bought my Z9 here and the team knew more about its technical specifications than I did. Incredible service from start to finish.</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">AK</div>
+        <div>
+          <div class="author-name">Ahmed Khalid</div>
+          <div class="author-role">Commercial Photographer, Karachi</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <p class="testimonial-text">I drove from Lahore specifically to visit HRP. Their lens selection is unmatched and the staff helped me test three Sony G Master lenses before I made my decision. That kind of experience doesn't exist anywhere else.</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">SR</div>
+        <div>
+          <div class="author-name">Sara Raza</div>
+          <div class="author-role">Wedding Filmmaker, Lahore</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <p class="testimonial-text">Got my Canon R5 C on installments with zero hassle. The sensor cleaning service they offer kept my camera in perfect condition throughout my entire Karakoram expedition. These guys are professionals.</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">MH</div>
+        <div>
+          <div class="author-name">Muhammad Haris</div>
+          <div class="author-role">Travel & Landscape Photographer</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider-gold">
+
+<!-- ============================
+     CONTACT / FORM
+============================= -->
+<div class="contact-section" id="contact">
+  <div class="contact-info">
+    <div class="section-label">Get In Touch</div>
+    <h2 class="section-title" style="font-size:52px;">VISIT<br><em>Our Store</em></h2>
+    <p class="section-desc" style="margin-bottom:50px;">Our experts are on hand six days a week to help you make the right choice. Walk in, test the gear, and leave with confidence.</p>
+
+    <div class="contact-detail">
+      <span class="contact-icon">📍</span>
+      <div class="contact-detail-text">
+        <h5>Store Location</h5>
+        <p>Shop 12, Panorama Centre, Raja Ghazanfar Ali Road<br>Saddar, Karachi — 74400, Pakistan</p>
+      </div>
+    </div>
+    <div class="contact-detail">
+      <span class="contact-icon">📞</span>
+      <div class="contact-detail-text">
+        <h5>Phone & WhatsApp</h5>
+        <p>+92 21 3456 7890<br>+92 300 1234 567 (WhatsApp)</p>
+      </div>
+    </div>
+    <div class="contact-detail">
+      <span class="contact-icon">📧</span>
+      <div class="contact-detail-text">
+        <h5>Email</h5>
+        <p>info@hrpcameras.pk<br>orders@hrpcameras.pk</p>
+      </div>
+    </div>
+    <div class="contact-detail">
+      <span class="contact-icon">🕐</span>
+      <div class="contact-detail-text">
+        <h5>Business Hours</h5>
+        <p>Monday – Saturday: 10:00 AM – 8:00 PM<br>Sunday: Closed</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact-form-wrap">
+    <div class="section-label">Send a Message</div>
+    <h3 style="font-family:var(--font-display); font-size:36px; color:var(--white); letter-spacing:2px; margin-bottom:36px;">LET'S TALK<br><span style="font-family:var(--font-serif); font-style:italic; color:var(--gold);">Cameras</span></h3>
+
+    <form onsubmit="handleForm(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" class="form-input" placeholder="Ali" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" class="form-input" placeholder="Ahmed" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" class="form-input" placeholder="+92 300 0000000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">I'm Interested In</label>
+        <select class="form-select">
+          <option value="">Select a Category</option>
+          <option>Nikon Cameras & Lenses</option>
+          <option>Sony Alpha System</option>
+          <option>Canon EOS R System</option>
+          <option>Studio Lighting & LED</option>
+          <option>Video & Filmmaking Gear</option>
+          <option>Accessories & Filters</option>
+          <option>Service & Repair</option>
+          <option>General Enquiry</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Message</label>
+        <textarea class="form-textarea" placeholder="Tell us what you're looking for, your budget, or any specific questions about a product..."></textarea>
+      </div>
+      <button type="submit" class="btn-submit">Send Message →</button>
+    </form>
+
+    <div id="form-success" style="display:none; margin-top:20px; padding:20px; border:1px solid var(--gold); color:var(--gold); font-size:13px; letter-spacing:1px;">
+      ✓ Your message has been sent. Our team will respond within 24 hours.
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     FOOTER
+============================= -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a href="#" class="logo">
+        <div class="logo-mark" style="width:38px;height:38px;">
+          <svg viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="23" cy="23" r="21.5" stroke="#c9a84c" stroke-width="1"/>
+            <circle cx="23" cy="23" r="13" fill="#141414" stroke="#c9a84c" stroke-width="0.8"/>
+            <circle cx="23" cy="23" r="7" fill="#c9a84c" opacity="0.9"/>
+            <circle cx="23" cy="23" r="3.5" fill="#080808"/>
+            <line x1="23" y1="10" x2="23" y2="4" stroke="#c9a84c" stroke-width="1.2"/>
+            <line x1="23" y1="36" x2="23" y2="42" stroke="#c9a84c" stroke-width="1.2"/>
+            <line x1="10" y1="23" x2="4" y2="23" stroke="#c9a84c" stroke-width="1.2"/>
+            <line x1="36" y1="23" x2="42" y2="23" stroke="#c9a84c" stroke-width="1.2"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name" style="font-size:22px;">HRP</span>
+          <span class="logo-tagline">High Resolution Photography</span>
+        </div>
+      </a>
+      <p>Karachi's premier destination for professional cameras, lenses, and photographic equipment since 2010. Authorised dealer for Nikon, Sony, and Canon.</p>
+      <div class="footer-social">
+        <a href="#" class="social-btn">f</a>
+        <a href="#" class="social-btn">in</a>
+        <a href="#" class="social-btn">yt</a>
+        <a href="#" class="social-btn">ig</a>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <h5>Products</h5>
+      <ul>
+        <li><a href="#">Nikon Cameras</a></li>
+        <li><a href="#">Sony Alpha</a></li>
+        <li><a href="#">Canon EOS R</a></li>
+        <li><a href="#">Nikkor Lenses</a></li>
+        <li><a href="#">Studio Lighting</a></li>
+        <li><a href="#">Tripods & Supports</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h5>Services</h5>
+      <ul>
+        <li><a href="#">Sensor Cleaning</a></li>
+        <li><a href="#">Lens Calibration</a></li>
+        <li><a href="#">Warranty Repairs</a></li>
+        <li><a href="#">Trade-In Program</a></li>
+        <li><a href="#">Rental Service</a></li>
+        <li><a href="#">Photography Workshops</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h5>Company</h5>
+      <ul>
+        <li><a href="#">About HRP</a></li>
+        <li><a href="#">Our Team</a></li>
+        <li><a href="#">Careers</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>© 2025 HRP — High Resolution Photography. All rights reserved. Karachi, Pakistan.</p>
+    <span class="hrp-mark">HRP</span>
+  </div>
+</footer>
+
+<!-- ============================
+     JAVASCRIPT
+============================= -->
+<script>
+// --- Cursor ---
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+function animateRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+document.querySelectorAll('a, button, .product-card, .equip-card, .nikon-cat').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.transform = 'translate(-50%,-50%) scale(2.5)';
+    cursor.style.background = 'transparent';
+    cursor.style.border = '1px solid var(--gold)';
+    ring.style.width = '60px'; ring.style.height = '60px';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+    cursor.style.background = 'var(--gold)';
+    cursor.style.border = 'none';
+    ring.style.width = '36px'; ring.style.height = '36px';
+  });
+});
+
+// --- Navbar scroll ---
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// --- Brand tabs ---
+function switchTab(brand) {
+  document.querySelectorAll('.brand-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.brand-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + brand).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// --- Scroll reveal ---
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+reveals.forEach(el => observer.observe(el));
+
+// --- Form ---
+function handleForm(e) {
+  e.preventDefault();
+  document.getElementById('form-success').style.display = 'block';
+  e.target.style.opacity = '0.4';
+  e.target.style.pointerEvents = 'none';
+}
+
+// --- Mobile menu ---
+function toggleMenu() {
+  const links = document.querySelector('.nav-links');
+  if (links.style.display === 'flex') {
+    links.style.display = 'none';
+  } else {
+    links.style.cssText = 'display:flex; flex-direction:column; position:fixed; top:70px; left:0; right:0; background:rgba(8,8,8,0.98); padding:30px; gap:24px; border-bottom:1px solid var(--border); backdrop-filter:blur(20px);';
+  }
+}
+
+// --- Add to cart micro-interaction ---
+document.querySelectorAll('.add-cart').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const orig = this.textContent;
+    this.textContent = '✓ Added';
+    this.style.background = 'var(--gold)';
+    this.style.color = 'var(--black)';
+    setTimeout(() => {
+      this.textContent = orig;
+      this.style.background = '';
+      this.style.color = '';
+    }, 1800);
+  });
+});
+</script>
+</body>
+</html>
